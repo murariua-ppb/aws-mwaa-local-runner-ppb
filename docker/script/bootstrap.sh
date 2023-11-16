@@ -2,6 +2,7 @@
 
 set -e
 set -x
+dnf update -y ca-certificates
 
 # install adduser and add the airflow user
 dnf update -y
@@ -26,7 +27,8 @@ python_file=Python-$PYTHON_VERSION
 python_tar=$python_file.tar
 python_xz=$python_tar.xz
 sudo mkdir python_source
-wget "https://www.python.org/ftp/python/$PYTHON_VERSION/$python_xz" -P /python_source
+#wget "https://www.python.org/ftp/python/$PYTHON_VERSION/$python_xz" -P /python_source
+curl -k "https://www.python.org/ftp/python/$PYTHON_VERSION/$python_xz" -o /python_source/$python_xz
 cp /python_source/$python_xz /python_install/$python_xz
 unxz ./python_install/$python_xz
 tar -xf ./python_install/$python_tar -C ./python_install
@@ -52,23 +54,23 @@ dnf install -y java-17-amazon-corretto
 sudo mkdir mariadb_rpm
 sudo chown airflow /mariadb_rpm
 
-if [[ $(uname -p) == "aarch64" ]]; then
-  wget https://mirror.mariadb.org/yum/11.1/fedora38-aarch64/rpms/MariaDB-common-11.1.2-1.fc38.$(uname -p).rpm -P /mariadb_rpm
-  wget https://mirror.mariadb.org/yum/11.1/fedora38-aarch64/rpms/MariaDB-shared-11.1.2-1.fc38.$(uname -p).rpm -P /mariadb_rpm
-  wget https://mirror.mariadb.org/yum/11.1/fedora38-aarch64/rpms/MariaDB-devel-11.1.2-1.fc38.$(uname -p).rpm -P /mariadb_rpm
-else
-  wget https://mirror.mariadb.org/yum/11.1/fedora38-amd64/rpms/MariaDB-common-11.1.2-1.fc38.$(uname -p).rpm -P /mariadb_rpm
-  wget https://mirror.mariadb.org/yum/11.1/fedora38-amd64/rpms/MariaDB-shared-11.1.2-1.fc38.$(uname -p).rpm -P /mariadb_rpm
-  wget https://mirror.mariadb.org/yum/11.1/fedora38-amd64/rpms/MariaDB-devel-11.1.2-1.fc38.$(uname -p).rpm -P /mariadb_rpm
-fi
+#curl -k "https://mirror.mariadb.org/yum/11.2.1/fedora38-aarch64/rpms/MariaDB-common-11.1.2-1.fc38.aarch64.rpm" -o /mariadb_rpm/MariaDB-common-11.1.2-1.fc38.aarch64.rpm -v
+#curl -k "https://mirror.mariadb.org/yum/11.1.2/fedora38-amd64/rpms/MariaDB-common-11.1.2-1.fc38.x86_64.rpm" -o /mariadb_rpm/MariaDB-common-11.1.2-1.fc38.x86_64.rpm
+#curl -k https://mirror.mariadb.org/yum/11.2.1/fedora38-aarch64/rpms/MariaDB-shared-11.1.2-1.fc38.aarch64.rpm -o /mariadb_rpm/MariaDB-shared-11.1.2-1.fc38.aarch64.rpm -v
+#curl -k https://mirror.mariadb.org/yum/11.2.1/fedora38-aarch64/rpms/MariaDB-devel-11.1.2-1.fc38.aarch64.rpm -o /mariadb_rpm/MariaDB-devel-11.1.2-1.fc38.aarch64.rpm -v
 
+#curl -k "https://mirror.mariadb.org/yum/11.1.2/fedora38-amd64/rpms/MariaDB-shared-11.1.2-1.fc38.x86_64.rpm" -o /mariadb_rpm/MariaDB-shared-11.1.2-1.fc38.x86_64.rpm
+#curl -k "https://mirror.mariadb.org/yum/11.1.2/fedora38-amd64/rpms/MariaDB-devel-11.1.2-1.fc38.x86_64.rpm" -o /mariadb_rpm/MariaDB-devel-11.1.2-1.fc38.x86_64.rpm
+wget https://mirror.mariadb.org/yum/11.2.1/fedora38-aarch64/rpms/MariaDB-common-11.2.1-1.fc38.$(uname -p).rpm -P /mariadb_rpm --no-check-certificate
+wget https://mirror.mariadb.org/yum/11.2.1/fedora38-aarch64/rpms/MariaDB-shared-11.2.1-1.fc38.$(uname -p).rpm -P /mariadb_rpm --no-check-certificate
+wget https://mirror.mariadb.org/yum/11.2.1/fedora38-aarch64/rpms/MariaDB-devel-11.2.1-1.fc38.$(uname -p).rpm -P /mariadb_rpm --no-check-certificate
 # install mariadb_devel and its dependencies
 sudo rpm -ivh /mariadb_rpm/*
 
 sudo -u airflow pip3 install $PIP_OPTION --no-use-pep517 --constraint /constraints.txt poetry
 sudo -u airflow pip3 install $PIP_OPTION --constraint /constraints.txt cached-property
 sudo -u airflow pip3 install $PIP_OPTION --constraint /constraints.txt wheel 
-sudo -u airflow pip3 install $PIP_OPTION --constraint /constraints.txt --use-deprecated legacy-resolver apache-airflow[celery,statsd"${AIRFLOW_DEPS:+,}${AIRFLOW_DEPS}"]=="${AIRFLOW_VERSION}"
+sudo -u airflow     pip3 install $PIP_OPTION --constraint /constraints.txt --use-deprecated legacy-resolver apache-airflow[celery,statsd"${AIRFLOW_DEPS:+,}${AIRFLOW_DEPS}"]=="${AIRFLOW_VERSION}"
 
 dnf install -y libxml2-devel libxslt-devel
 # install celery[sqs] and its dependencies
@@ -104,7 +106,7 @@ dnf install -y zip unzip bzip2 gzip # tar
 # install awscli v2
 zip_file="awscliv2.zip"
 cd /tmp
-curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o $zip_file
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o $zip_file -k
 unzip $zip_file
 ./aws/install
 rm $zip_file
