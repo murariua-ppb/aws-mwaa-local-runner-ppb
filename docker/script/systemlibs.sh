@@ -1,6 +1,8 @@
 #!/bin/sh
 
 set -e
+# Temporarily disable SSL verification for dnf
+echo 'sslverify=false' >> /etc/dnf/dnf.conf
 dnf update -y
 
 # install basic python environment
